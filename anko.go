@@ -14,7 +14,7 @@ import (
 const addr = "forecasts.anko-investor.com:443"
 const ua = "github.com/anglo-korean/anko-go-sdk#0.1.0"
 
-var badDummyErr = fmt.Errorf("unable to connect to service on time")
+var errBadConnection = fmt.Errorf("unable to connect to service on time")
 
 // ConnectionTimeout is used in two places:
 // * To timeout connections to the Forecasts gRPC Service, and
@@ -32,7 +32,7 @@ var ConnectionTimeout = time.Second * 5
 // behaviour is appropriate.
 //
 // Similarly Handlers are called synchonously, which is the opposite behaviour to
-// how http.HandlerFunc works- it is the repsonsibility of the developer to provide
+// how http.HandlerFunc works- it is the responsibility of the developer to provide
 // gofunc/ sync semantics where required.
 type Handler func(*Forecast) error
 
@@ -149,7 +149,7 @@ func (c Connection) testConn(sc Forecasts_StreamClient) (err error) {
 		}
 
 		if f.Ric != "DUMMY" {
-			out <- badDummyErr
+			out <- errBadConnection
 
 			return
 		}
@@ -168,7 +168,7 @@ func (c Connection) testConn(sc Forecasts_StreamClient) (err error) {
 		}
 
 	case <-time.After(ConnectionTimeout):
-		err = badDummyErr
+		err = errBadConnection
 
 		return
 	}
