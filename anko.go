@@ -14,8 +14,6 @@ import (
 const addr = "forecasts.anko-investor.com:443"
 const ua = "github.com/anglo-korean/anko-go-sdk#0.1.0"
 
-var errBadConnection = fmt.Errorf("unable to connect to service on time")
-
 // ConnectionTimeout is used in two places:
 // * To timeout connections to the Forecasts gRPC Service, and
 // * To provide a time limit for the Forecasts gRPC Service to validate an anko token and signal readiness
@@ -112,11 +110,6 @@ func (c Connection) handler(handler Handler) (err error) {
 		return
 	}
 
-	err = c.testConn(sc)
-	if err != nil {
-		return
-	}
-
 	var (
 		f *Forecast
 	)
@@ -127,51 +120,19 @@ func (c Connection) handler(handler Handler) (err error) {
 			return
 		}
 
-		err = handler(f)
-		if err != nil {
-			return
+		if !isDummy(f) {
+			err = handler(f)
+			if err != nil {
+				return
+			}
 		}
 	}
 }
 
-// testConn will stream a single messgae from the Stream endpoint, returning
-// an error if either the Recv call fails, or if the wrong RIC is returned
-func (c Connection) testConn(sc Forecasts_StreamClient) (err error) {
-	out := make(chan error)
-	go func() {
-		defer close(out)
-
-		f, err := sc.Recv()
-		if err != nil {
-			out <- err
-
-			return
-		}
-
-		if f.Ric != "DUMMY" {
-			out <- errBadConnection
-
-			return
-		}
-
-		out <- nil
-	}()
-
-	// On connect, the Forecasts service will send a dummy forecast to show
-	// that the connection is up and running.
-	//
-	// Wait for this to either turn up, or timeout
-	select {
-	case err = <-out:
-		if err != nil {
-			return
-		}
-
-	case <-time.After(ConnectionTimeout):
-		err = errBadConnection
-
-		return
-	}
-
-	return
+// isDummy returns a bool signifying whether or not a message is
+// the default dummy one we use as  aheartbeat
+func isDummy(f *Forecast) (dummy bool) {
+	return f.Id == "dummy-forecast" &&
+		f.Symbol.Symbol == "DUMMY" &&
+		f.Symbol.Exchange == "Anglo Korean"
 }
