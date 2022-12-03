@@ -103,7 +103,17 @@ func (c *Connection) connect() (err error) {
 func (c Connection) Handle(handler Handler) (err error) {
 	for {
 		err = c.handler(handler)
-		if err != nil && err.Error() == "rpc error: code = Internal desc = stream terminated by RST_STREAM with error code: INTERNAL_ERROR" {
+
+		// If no error occurs, then reconnect; it's hard to understand why
+		// this might happen and an error not occur, but the next connection
+		// will fail if there's anything major anyway
+		if err == nil {
+			continue
+		}
+
+		// If there's an error, but the error is a timeout (so: we've not received a
+		// forecast in a while) then try to reconnect
+		if err.Error() == "rpc error: code = Internal desc = stream terminated by RST_STREAM with error code: INTERNAL_ERROR" {
 			err = c.connect()
 			if err != nil {
 				break
@@ -112,6 +122,7 @@ func (c Connection) Handle(handler Handler) (err error) {
 			continue
 		}
 
+		// If we get here then we have an actual error we need users to deal with
 		break
 	}
 
