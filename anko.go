@@ -21,11 +21,17 @@ import (
 // gnomic as that is).
 var Addr = "forecasts.anko-investor.com:443"
 
-// UA represents the User Agent shared with the gateway, and is used to provide metrics to allow
-// things like deprecation warnings, and to help track errors in implementations.
+// TLSConfig allows for overriding how this SDK connects to the specified `Addr`;
 //
-// To provide your own UA, you will need to either fork the repo, or write your own client
-const UA = "github.com/anglo-korean/anko-go-sdk#0.2.0"
+// Some developers, for instance, may prefer to set very restrictive TLS configs
+// whereas others may not.
+//
+// Similarly, when pointing to stubbed endpoints developers may want to set this as per
+//
+//	anko.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+//
+// to avoid having to use trusted endpoints
+var TLSConfig = new(tls.Config)
 
 // ConnectionTimeout is used in two places:
 // * To timeout connections to the Forecasts gRPC Service, and
@@ -34,6 +40,12 @@ const UA = "github.com/anglo-korean/anko-go-sdk#0.2.0"
 // This timeout allows consumer applications to recognise when a gRPC connection is hanging, and when
 // a lack of Forecasts just means there are no valid Forecasts.
 var ConnectionTimeout = time.Second * 5
+
+// UA represents the User Agent shared with the gateway, and is used to provide metrics to allow
+// things like deprecation warnings, and to help track errors in implementations.
+//
+// To provide your own UA, you will need to either fork the repo, or write your own client
+const UA = "github.com/anglo-korean/anko-go-sdk#0.2.0"
 
 // Handler is a function, in much the same vein as http.HandlerFunc, which consumer
 // applications may use to process Forecasts.
@@ -70,7 +82,7 @@ func New(token, identifier string) (c Connection, err error) {
 func (c *Connection) connect() (err error) {
 	ctx, _ := context.WithTimeout(context.Background(), ConnectionTimeout)
 
-	conn, err := grpc.DialContext(ctx, Addr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, Addr, grpc.WithTransportCredentials(credentials.NewTLS(TLSConfig)), grpc.WithBlock())
 	if err != nil {
 		return
 	}
