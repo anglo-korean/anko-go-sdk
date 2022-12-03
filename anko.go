@@ -11,8 +11,21 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const addr = "forecasts.anko-investor.com:443"
-const ua = "github.com/anglo-korean/anko-go-sdk#0.1.0"
+// Addr is the remote address of the Anko Streaming Endpoint. It may be used to point
+// to different Anko Endpoints, for instance where enterprise users have custom VPN endpoints.
+//
+// Similarly, it allows developers to point to stubbed endpoints during testing.
+//
+// In essence, though, the default value is correct and fine for 99.9% of applications.
+// If you don't know whether you need to change this, then you don't need to change this (as
+// gnomic as that is).
+var Addr = "forecasts.anko-investor.com:443"
+
+// UA represents the User Agent shared with the gateway, and is used to provide metrics to allow
+// things like deprecation warnings, and to help track errors in implementations.
+//
+// To provide your own UA, you will need to either fork the repo, or write your own client
+const UA = "github.com/anglo-korean/anko-go-sdk#0.2.0"
 
 // ConnectionTimeout is used in two places:
 // * To timeout connections to the Forecasts gRPC Service, and
@@ -57,7 +70,7 @@ func New(token, identifier string) (c Connection, err error) {
 func (c *Connection) connect() (err error) {
 	ctx, _ := context.WithTimeout(context.Background(), ConnectionTimeout)
 
-	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})), grpc.WithBlock())
+	conn, err := grpc.DialContext(ctx, Addr, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})), grpc.WithBlock())
 	if err != nil {
 		return
 	}
@@ -99,7 +112,7 @@ func (c Connection) handler(handler Handler) (err error) {
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	m := &Metadata{
-		Ua: ua,
+		Ua: UA,
 		Tags: []*Tag{
 			{Key: "Identifier", Value: c.identifier},
 		},
