@@ -45,7 +45,7 @@ var ConnectionTimeout = time.Second * 5
 // things like deprecation warnings, and to help track errors in implementations.
 //
 // To provide your own UA, you will need to either fork the repo, or write your own client
-const UA = "github.com/anglo-korean/anko-go-sdk#0.2.0"
+const UA = "github.com/anglo-korean/anko-go-sdk@v2.0.0"
 
 // Handler is a function, in much the same vein as http.HandlerFunc, which consumer
 // applications may use to process Forecasts.
